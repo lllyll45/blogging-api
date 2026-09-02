@@ -1,72 +1,37 @@
 package com.example.blogging_api.controller;
 
-import com.example.blogging_api.model.Category;
 import com.example.blogging_api.model.Post;
+import com.example.blogging_api.model.Category;
+import com.example.blogging_api.repository.PostRepository;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 @RestController
 @RequestMapping("/posts")
 public class PostController {
 
-    private Map<Long, Post> posts = new HashMap<>();
-    private Long nextId = 1L;
-
-    public PostController() {
-        Post testPost1 = new Post();
-        testPost1.setId(nextId++);
-        testPost1.setTitle("My First Blog Post");
-        testPost1.setContent("This is the content of my first blog post.");
-        testPost1.setCategory(Category.TECHNOLOGY);
-        testPost1.setTags(List.of("Tech", "Programming"));
-        testPost1.setCreatedAt(new Date());
-        testPost1.setUpdatedAt(new Date());
-        posts.put(testPost1.getId(), testPost1);
-
-        Post testPost2 = new Post();
-        testPost2.setId(nextId++);
-        testPost2.setTitle("Learning Spring Boot");
-        testPost2.setContent("Spring Boot is awesome for building REST APIs!");
-        testPost2.setCategory(Category.EDUCATION);
-        testPost2.setTags(List.of("Java", "Spring"));
-        testPost2.setCreatedAt(new Date());
-        testPost2.setUpdatedAt(new Date());
-        posts.put(testPost2.getId(), testPost2);
-    }
+    @Autowired
+    private PostRepository postRepository;
 
     @GetMapping
     public List<Post> getPosts(@RequestParam(required = false) String term) {
-        List<Post> allPosts = new ArrayList<>(posts.values());
-
-        if (term == null || term.trim().isEmpty()) {
-            return allPosts;
+        if (term != null && !term.trim().isEmpty()) {
+            return postRepository.searchByTerm(term.trim());
         }
-
-        List<Post> filtered = new ArrayList<>();
-        String termLower = term.toLowerCase().trim();
-
-        for (Post post : allPosts) {
-            String title = post.getTitle() != null ? post.getTitle().toLowerCase() : "";
-            String content = post.getContent() != null ? post.getContent().toLowerCase() : "";
-            String category = post.getCategory() != null ? post.getCategory().toString().toLowerCase() : "";
-
-            if (title.contains(termLower) || content.contains(termLower) || category.contains(termLower)) {
-                filtered.add(post);
-            }
-        }
-        return filtered;
+        return postRepository.findAll();
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Post> getPostById(@PathVariable Long id) {
-        Post post = posts.get(id);
-        if (post != null) {
-            return ResponseEntity.ok(post);
-        }
-        return ResponseEntity.notFound().build();
+        return postRepository.findById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
@@ -76,12 +41,9 @@ public class PostController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
-        newPost.setId(nextId++);
-
         if (newPost.getCategory() == null) {
             newPost.setCategory(Category.GENERAL);
         }
-
         if (newPost.getTags() == null) {
             newPost.setTags(new ArrayList<>());
         }
@@ -90,8 +52,8 @@ public class PostController {
         newPost.setCreatedAt(now);
         newPost.setUpdatedAt(now);
 
-        posts.put(newPost.getId(), newPost);
-        return new ResponseEntity<>(newPost, HttpStatus.CREATED);
+        Post savedPost = postRepository.save(newPost);
+        return new ResponseEntity<>(savedPost, HttpStatus.CREATED);
     }
 
     @PutMapping("/{id}")
@@ -101,31 +63,28 @@ public class PostController {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
         }
 
-        Post existingPost = posts.get(id);
-        if (existingPost != null) {
-            existingPost.setTitle(updatedPost.getTitle());
-            existingPost.setContent(updatedPost.getContent());
-
-            if (updatedPost.getCategory() != null) {
-                existingPost.setCategory(updatedPost.getCategory());
-            }
-
-            if (updatedPost.getTags() != null) {
-                existingPost.setTags(updatedPost.getTags());
-            }
-
-            existingPost.setUpdatedAt(new Date());
-            return ResponseEntity.ok(existingPost);
-        }
-        return ResponseEntity.notFound().build();
+        return postRepository.findById(id)
+                .map(existingPost -> {
+                    existingPost.setTitle(updatedPost.getTitle());
+                    existingPost.setContent(updatedPost.getContent());
+                    if (updatedPost.getCategory() != null) {
+                        existingPost.setCategory(updatedPost.getCategory());
+                    }
+                    if (updatedPost.getTags() != null) {
+                        existingPost.setTags(updatedPost.getTags());
+                    }
+                    existingPost.setUpdatedAt(new Date());
+                    return ResponseEntity.ok(postRepository.save(existingPost));
+                })
+                .orElse(ResponseEntity.notFound().build());
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deletePost(@PathVariable Long id) {
-        Post removed = posts.remove(id);
-        if (removed != null) {
-            return ResponseEntity.noContent().build(); //204
+        if (postRepository.existsById(id)) {
+            postRepository.deleteById(id);
+            return ResponseEntity.noContent().build();
         }
-        return ResponseEntity.notFound().build(); //404
+        return ResponseEntity.notFound().build();
     }
 }

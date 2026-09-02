@@ -1,31 +1,38 @@
 package com.example.blogging_api.model;
 
+import jakarta.persistence.*;
 import java.util.Date;
 import java.util.List;
 
+@Entity
+@Table(name = "posts")
 public class Post {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(nullable = false)
     private String title;
+
+    @Column(nullable = false, length = 10000)
     private String content;
+
+    @Enumerated(EnumType.STRING)
     private Category category;
+
+    @ElementCollection
     private List<String> tags;
+
+    @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
+
+    @Temporal(TemporalType.TIMESTAMP)
     private Date updatedAt;
 
-    public Post() {};
+    public Post() {}
 
-    public Post(Long id, String title, String content, Category category,
-                List<String> tags, Date createdAt, Date updatedAt) {
-        this.id = id;
-        this.title = title;
-        this.content = content;
-        this.category = category;
-        this.tags = tags;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-    }
-
+    // Геттеры и сеттеры
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
 
@@ -46,5 +53,4 @@ public class Post {
 
     public Date getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Date updatedAt) { this.updatedAt = updatedAt; }
-
 }
