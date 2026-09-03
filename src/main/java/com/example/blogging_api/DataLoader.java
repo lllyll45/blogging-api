@@ -37,7 +37,19 @@ public class DataLoader implements CommandLineRunner {
             post2.setUpdatedAt(new Date());
             postRepository.save(post2);
 
+            for (int i = 0; i < 20; i++) {
+                Post post = new Post();
+                post.setTitle("Test Post " + i);
+                post.setContent("Content for post " + i);
+                post.setCategory(Category.GENERAL);
+                post.setTags(List.of("Test"));
+                post.setCreatedAt(new Date());
+                post.setUpdatedAt(new Date());
+                postRepository.save(post);
+            }
+
             System.out.println("Тестовые посты добавлены");
         }
     }
+
 }
