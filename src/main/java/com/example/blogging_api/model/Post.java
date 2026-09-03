@@ -1,30 +1,41 @@
 package com.example.blogging_api.model;
 
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import java.util.Date;
 import java.util.List;
 
+@Entity
+@Table(name = "posts")
 public class Post {
 
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @NotBlank(message = "Заголовок обязателен")
+    @Size(max = 100, message = "Заголовок не может быть длиннее 100 символов")
     private String title;
+
+    @NotBlank(message = "Содержание обязательно")
+    @Size(max = 5000, message = "Содержание не может быть длиннее 5000 символов")
     private String content;
+
+    @Enumerated(EnumType.STRING)
     private Category category;
+
+    @ElementCollection
+    @Size(max = 10, message = "Нельзя добавить больше 10 тегов")
     private List<String> tags;
+
+    @Temporal(TemporalType.TIMESTAMP)
     private Date createdAt;
+
+    @Temporal(TemporalType.TIMESTAMP)
     private Date updatedAt;
 
-    public Post() {};
-
-    public Post(Long id, String title, String content, Category category,
-                List<String> tags, Date createdAt, Date updatedAt) {
-        this.id = id;
-        this.title = title;
-        this.content = content;
-        this.category = category;
-        this.tags = tags;
-        this.createdAt = createdAt;
-        this.updatedAt = updatedAt;
-    }
+    public Post() {}
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -46,5 +57,4 @@ public class Post {
 
     public Date getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Date updatedAt) { this.updatedAt = updatedAt; }
-
 }
