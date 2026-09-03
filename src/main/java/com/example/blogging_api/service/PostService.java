@@ -4,11 +4,14 @@ import com.example.blogging_api.model.Category;
 import com.example.blogging_api.model.Post;
 import com.example.blogging_api.repository.PostRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 @Service
 public class PostService {
@@ -16,11 +19,18 @@ public class PostService {
     @Autowired
     private PostRepository postRepository;
 
-    public List<Post> getAllPosts(String term) {
+
+    public Page<Post> getAllPosts(String term, int page, int size, String sortBy, String sortDir) {
+
+        Sort sort = Sort.by(Sort.Direction.fromString(sortDir), sortBy);
+
+        Pageable pageable = PageRequest.of(page, size, sort);
+
         if (term != null && !term.trim().isEmpty()) {
-            return postRepository.searchByTerm(term.trim());
+            return postRepository.searchByTerm(term.trim(), pageable);
         }
-        return postRepository.findAll();
+
+        return postRepository.findAll(pageable);
     }
 
     public Post getPostById(Long id) {
@@ -29,7 +39,6 @@ public class PostService {
     }
 
     public Post createPost(Post newPost) {
-
         if (newPost.getCategory() == null) {
             newPost.setCategory(Category.GENERAL);
         }
@@ -45,7 +54,6 @@ public class PostService {
     }
 
     public Post updatePost(Long id, Post updatedPost) {
-
         Post existingPost = postRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Post not found with id: " + id));
 

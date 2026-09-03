@@ -4,10 +4,9 @@ import com.example.blogging_api.model.Post;
 import com.example.blogging_api.service.PostService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 @RestController
 @RequestMapping("/posts")
@@ -17,8 +16,14 @@ public class PostController {
     private PostService postService;
 
     @GetMapping
-    public List<Post> getPosts(@RequestParam(required = false) String term) {
-        return postService.getAllPosts(term);
+    public Page<Post> getPosts(
+            @RequestParam(required = false) String term,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "createdAt") String sortBy,
+            @RequestParam(defaultValue = "desc") String sortDir) {
+
+        return postService.getAllPosts(term, page, size, sortBy, sortDir);
     }
 
     @GetMapping("/{id}")
